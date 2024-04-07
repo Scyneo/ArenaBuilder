@@ -27,7 +27,6 @@ func (h *ChampionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
     _, err = w.Write(icon)
     if err != nil {
-        // Handle error
         log.Println("Error writing icon to response:", err)
     }
 }

@@ -8,9 +8,19 @@ import (
   "learning/data"
 )
 
-func handle(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received a request at my domain")
-	w.Write([]byte("Hello, ME"))
+func enableCORS(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+
+        if r.Method == "OPTIONS" {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+
+        next.ServeHTTP(w, r)
+    })
 }
 
 func main() {
@@ -21,21 +31,24 @@ func main() {
 	defer dbPool.Close()
 
   championHandler := &handlers.ChampionHandler{DB: dbPool}
+  teamsHandler := &handlers.TeamsHandler{DB: dbPool}
 
   router := http.NewServeMux()
-  router.HandleFunc("/", handle)
   router.Handle("GET /champions/{name}", championHandler)
+  router.Handle("GET /teams", teamsHandler)
+
+  wrappedRouter := enableCORS(router)
 
   server := http.Server{
     Addr:    ":8080",
-    Handler: router,
+    Handler: wrappedRouter,
   } 
 
   fmt.Println("Starting GO API service...")
   fmt.Println(`
    ______     ______        ______     ______   __    
   /\  ___\   /\  __ \      /\  __ \   /\  == \ /\ \   
-  \ \ \__ \  \ \ \/\ \     \ \  __ \  \ \  _-/ \ \ \  
+  \ \ \__ \  \ \ \_\ \     \ \  __ \  \ \  _-/ \ \ \  
    \ \_____\  \ \_____\     \ \_\ \_\  \ \_\    \ \_\ 
     \/_____/   \/_____/      \/_/\/_/   \/_/     \/_/ `)
 

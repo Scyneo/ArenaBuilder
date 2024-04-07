@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .player {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .player img {
+            max-width: 100px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Team Players</h1>
+    <div id="team"></div>
+
+    <script>
+        async function fetchTeam() {
+            try {
+                // Fetch the team data from the server
+                const response = await fetch('http://localhost:8080/teams?players=one,two,three');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Display each player in the team
+                const teamContainer = document.getElementById('team');
+                teamContainer.innerHTML = ''; // Clear the team container
+
+                data.players.forEach(player => {
+                    const playerElement = document.createElement('div');
+                    playerElement.className = 'player';
+                    playerElement.innerHTML = `
+                        <h3>${player.name}</h3>
+                        <p>Champion: ${player.champion}</p>
+                        <img src="data:image/png;base64,${player.icon}" alt="${player.name}" />
+                    `;
+                    teamContainer.appendChild(playerElement);
+                });
+            } catch (error) {
+                console.error('Fetching team failed:', error);
+                document.getElementById('team').innerText = 'Failed to load team data.';
+            }
+        }
+
+        // Load the team when the page loads
+        window.onload = fetchTeam;
+    </script>
+</body>
+</html>
+
