@@ -18,17 +18,37 @@
             max-width: 100px;
             max-height: 100px;
         }
+        textarea {
+            width: 20%; /* Make the textarea full width of its container */
+            height: 200px; /* Set the height to support about eight lines or more */
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            resize: none; /* Optional: prevent resizing the textarea */
+        }
     </style>
 </head>
 <body>
     <h1>Team Players</h1>
+    <div>
+        <textarea id="playerNames" placeholder="Enter player names separated by commas"></textarea>
+        <button onclick="fetchTeam()">Load Team</button>
+    </div>
     <div id="team"></div>
 
     <script>
         async function fetchTeam() {
+            const playerNames = document.getElementById('playerNames').value;
             try {
                 // Fetch the team data from the server
-                const response = await fetch('http://localhost:8080/teams?players=one,two,three');
+                // Modify the URL to include the player names as a query parameter
+                const url = new URL('http://localhost:8080/teams');
+                if (playerNames) {
+                    url.searchParams.append('players', playerNames);
+                }
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -54,9 +74,7 @@
             }
         }
 
-        // Load the team when the page loads
-        window.onload = fetchTeam;
+        // Removed the window.onload = fetchTeam to prevent automatic fetching
     </script>
 </body>
 </html>
-
