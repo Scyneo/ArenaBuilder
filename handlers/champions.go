@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
-  "log"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type ChampionHandler struct {
@@ -12,7 +14,7 @@ type ChampionHandler struct {
 }
 
 func (h *ChampionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    var name string = r.PathValue("name")
+    var name string = cases.Title(language.English).String(r.PathValue("name"))
     var icon []byte
 
     err := h.DB.QueryRow(context.Background(), 

@@ -24,7 +24,7 @@ func main() {
 
   router := http.NewServeMux()
   router.HandleFunc("/", handle)
-  router.Handle("/champions/{name}", championHandler)
+  router.Handle("GET /champions/{name}", championHandler)
 
   server := http.Server{
     Addr:    ":8080",
