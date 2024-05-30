@@ -1,6 +1,7 @@
 package handlers
 
 import (
+  "math/rand"
   "context"
 	"fmt"
 	"net/http"
@@ -19,7 +20,7 @@ type TeamIn struct {
 }
 
 type TeamOut struct {
-  Players []Player `json:"players"`
+  Players [][2]Player `json:"players"`
 }
 
 type Player struct {
@@ -39,19 +40,19 @@ func (p *Player) MarshalJSON() ([]byte, error) {
   })
 }
 
-
 func (h *TeamsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   playersQuery := r.URL.Query().Get("players")
   players := strings.Split(playersQuery, ",")
+  shuffle(players)
 
-  var team TeamOut
-  for i, player := range players {
-    players[i] = strings.TrimSpace(player)
-    team.Players = append(team.Players, Player{Name: players[i]})
+  var teams []Player
+  for _, player := range players {
+    player = strings.TrimSpace(player)
+    teams = append(teams, Player{Name: player})
   }
 
   rows, err := h.DB.Query(context.Background(), 
-         "SELECT name, image FROM champions ORDER BY random() LIMIT $1", len(team.Players))
+         "SELECT name, image FROM champions ORDER BY random() LIMIT $1", len(teams))
   if err != nil {
       http.Error(w, "Champion not found", http.StatusNotFound)
       return
@@ -60,7 +61,7 @@ func (h *TeamsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   var i int
   for rows.Next() {
-    err := rows.Scan(&team.Players[i].Champion, &team.Players[i].Icon)
+    err := rows.Scan(&teams[i].Champion, &teams[i].Icon)
     if err != nil {
         http.Error(w, "Error assigning champions", http.StatusNotFound)
         fmt.Println(err)
@@ -68,8 +69,21 @@ func (h *TeamsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     }
     i++
   }
+  var finalTeam TeamOut
+  for i := 0; i < len(teams); i += 2 {
+    if (i+1) == len(teams) {
+      finalTeam.Players = append(finalTeam.Players, [2]Player{teams[i], {Name: "xd", Champion: "xd", Icon: []byte{}}})
+      break
+    }
+    finalTeam.Players = append(finalTeam.Players, [2]Player{teams[i], teams[i+1]})
+  }
 
-  json.NewEncoder(w).Encode(team)
+  json.NewEncoder(w).Encode(finalTeam)
   w.Header().Set("Content-Type", "application/json")
-  
+}
+
+func shuffle(slice []string) {
+  rand.Shuffle(len(slice), func(i, j int) {
+      slice[i], slice[j] = slice[j], slice[i]
+  })
 }

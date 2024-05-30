@@ -8,10 +8,20 @@
         body {
             font-family: Arial, sans-serif;
         }
-        .player {
-            margin-bottom: 20px;
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-gap: 20px;
+        }
+        .team-container {
             padding: 10px;
             border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .player {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
             border-radius: 5px;
         }
         .player img {
@@ -19,14 +29,14 @@
             max-height: 100px;
         }
         textarea {
-            width: 20%; /* Make the textarea full width of its container */
-            height: 200px; /* Set the height to support about eight lines or more */
+            width: 20%;
+            height: 200px;
             margin-bottom: 10px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-family: Arial, sans-serif;
-            resize: none; /* Optional: prevent resizing the textarea */
+            resize: none;
         }
     </style>
 </head>
@@ -36,14 +46,12 @@
         <textarea id="playerNames" placeholder="Enter player names separated by commas"></textarea>
         <button onclick="fetchTeam()">Load Team</button>
     </div>
-    <div id="team"></div>
+    <div class="team-grid" id="team"></div>
 
     <script>
         async function fetchTeam() {
             const playerNames = document.getElementById('playerNames').value;
             try {
-                // Fetch the team data from the server
-                // Modify the URL to include the player names as a query parameter
                 const url = new URL('http://localhost:8080/teams');
                 if (playerNames) {
                     url.searchParams.append('players', playerNames);
@@ -54,27 +62,39 @@
                 }
                 const data = await response.json();
 
-                // Display each player in the team
                 const teamContainer = document.getElementById('team');
-                teamContainer.innerHTML = ''; // Clear the team container
+                teamContainer.innerHTML = '';
 
-                data.players.forEach(player => {
-                    const playerElement = document.createElement('div');
-                    playerElement.className = 'player';
-                    playerElement.innerHTML = `
-                        <h3>${player.name}</h3>
-                        <p>Champion: ${player.champion}</p>
-                        <img src="data:image/png;base64,${player.icon}" alt="${player.name}" />
-                    `;
-                    teamContainer.appendChild(playerElement);
-                });
+                const flattenedPlayers = data.players.flat();
+                const teamSize = 2;
+                let teamCount = 0;
+
+                for (let i = 0; i < flattenedPlayers.length; i += teamSize) {
+                    teamCount++;
+                    const teamDiv = document.createElement('div');
+                    teamDiv.className = 'team-container';
+                    teamDiv.style.borderLeftColor = `#${(Math.random().toString(16) + '000000').substring(2,8).toUpperCase()}`;
+                    teamDiv.innerHTML = `<h2>Team ${teamCount}</h2>`;
+                    
+                    const teamPlayers = flattenedPlayers.slice(i, i + teamSize);
+                    teamPlayers.forEach(player => {
+                        const playerElement = document.createElement('div');
+                        playerElement.className = 'player';
+                        playerElement.innerHTML = `
+                            <h3>${player.name}</h3>
+                            <p>Champion: ${player.champion}</p>
+                            <img src="data:image/png;base64,${player.icon || ''}" alt="${player.name}" />
+                        `;
+                        teamDiv.appendChild(playerElement);
+                    });
+
+                    teamContainer.appendChild(teamDiv);
+                }
             } catch (error) {
                 console.error('Fetching team failed:', error);
                 document.getElementById('team').innerText = 'Failed to load team data.';
             }
         }
-
-        // Removed the window.onload = fetchTeam to prevent automatic fetching
     </script>
 </body>
 </html>
